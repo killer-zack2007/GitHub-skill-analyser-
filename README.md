@@ -1,4 +1,5 @@
 GitHub Pulse — Skill Evolution Analyzer
+
 A student-friendly GitHub analytics web app built with Streamlit.
 Features
 Public GitHub profile analysis
@@ -17,6 +18,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 Copy .env.example to .env, add your GitHub token, then:
 streamlit run app.py
+
 Collect data
 Start small:
 python src/collect_dataset.py --pages 1 --per-page 10 --output data/raw/github_users.csv
@@ -24,7 +26,9 @@ Train ML
 For supervised ML, add a skill_level column using an independently defined labeling process:
 python src/train_model.py --input data/raw/github_users.csv --output models/github_skill_model.joblib
 The app automatically uses the saved model if present; otherwise it uses the transparent rubric.
+
 Structure
+
 github-skill-analyzer/
 ├── app.py
 ├── requirements.txt
