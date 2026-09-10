@@ -1045,134 +1045,234 @@ if analyze:
                 )
 
 
-    # ========================================================
-    # PROJECT EVOLUTION
-    # ========================================================
+# ========================================================
+# PROJECT EVOLUTION / YEARLY ANALYSIS
+# ========================================================
+
+timeline = []
+
+try:
+
+    timeline = repository_timeline(
+        repositories
+    )
+
+except Exception:
 
     timeline = []
 
-    try:
 
-        timeline = repository_timeline(
-            repositories
-        )
+timeline_rows = []
 
-    except Exception:
+if timeline:
 
-        timeline = []
+    for item in timeline:
 
+        try:
 
-    timeline_rows = []
-
-    if timeline:
-
-        for item in timeline:
-
-            try:
-
-                date_value = item.get(
-                    "date"
-                )
-
-                project_name = item.get(
-                    "name",
-                    "Unknown"
-                )
-
-                stars_value = item.get(
-                    "stars",
-                    0
-                )
-
-                timeline_rows.append(
-                    {
-                        "Date": date_value,
-                        "Project": project_name,
-                        "Stars": max(
-                            0,
-                            int(
-                                stars_value or 0
-                            )
-                        )
-                    }
-                )
-
-            except Exception:
-                continue
-
-
-    if timeline_rows:
-
-        timeline_df = pd.DataFrame(
-            timeline_rows
-        )
-
-        timeline_df["Date"] = pd.to_datetime(
-            timeline_df["Date"],
-            errors="coerce"
-        )
-
-        timeline_df = timeline_df.dropna(
-            subset=["Date"]
-        )
-
-        if not timeline_df.empty:
-
-            render_html(
-                """
-                <div class="section-title">
-                    Project Evolution
-                </div>
-                """
+            date_value = item.get(
+                "date"
             )
 
-            fig = px.scatter(
-                timeline_df,
-                x="Date",
-                y="Stars",
-                hover_name="Project",
-                size="Stars",
-                template="plotly_dark"
+            project_name = item.get(
+                "name",
+                "Unknown"
             )
 
-            fig.update_layout(
-                height=380,
-                margin=dict(
-                    l=0,
-                    r=0,
-                    t=10,
-                    b=10
-                ),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                yaxis=dict(
-                    rangemode="tozero"
-                )
+            stars_value = item.get(
+                "stars",
+                0
             )
 
-            st.plotly_chart(
-                fig,
-                use_container_width=True,
-                config={
-                    "displaylogo": False,
-                    "responsive": True
+            timeline_rows.append(
+                {
+                    "Date": date_value,
+                    "Project": project_name,
+                    "Stars": max(
+                        0,
+                        int(stars_value or 0)
+                    )
                 }
             )
 
-        else:
+        except Exception:
 
-            render_html(
-                """
-                <div class="section-title">
-                    Project Evolution
-                </div>
-                <div class="glass">
-                    <div style="color:#858a99;font-size:14px;">
-                        Project evolution data is not available for this profile yet.
-                    </div>
-                </div>
-                """
+            continue
+
+
+# ========================================================
+# YEARLY PROJECT ANALYSIS
+# ========================================================
+
+if timeline_rows:
+
+    timeline_df = pd.DataFrame(
+        timeline_rows
+    )
+
+    # Convert dates safely
+    timeline_df["Date"] = pd.to_datetime(
+        timeline_df["Date"],
+        errors="coerce"
+    )
+
+    # Remove invalid dates
+    timeline_df = timeline_df.dropna(
+        subset=["Date"]
+    )
+
+    if not timeline_df.empty:
+
+        # -----------------------------------------------
+        # Extract year
+        # -----------------------------------------------
+
+        timeline_df["Year"] = (
+            timeline_df["Date"]
+            .dt.year
+            .astype(int)
+        )
+
+        # -----------------------------------------------
+        # Group projects by year
+        # -----------------------------------------------
+
+        yearly_df = (
+            timeline_df
+            .groupby("Year")
+            .agg(
+                Projects=("Project", "count"),
+                Stars=("Stars", "sum")
             )
+            .reset_index()
+        )
+
+        yearly_df = yearly_df.sort_values(
+            "Year"
+        )
+
+        # -----------------------------------------------
+        # Section title
+        # -----------------------------------------------
+
+        render_html(
+            """
+            <div class="section-title">
+                Project Evolution
+            </div>
+            """
+        )
+
+        # -----------------------------------------------
+        # Yearly project chart
+        # -----------------------------------------------
+
+        fig = px.bar(
+            yearly_df,
+            x="Year",
+            y="Projects",
+            text="Projects",
+            hover_data={
+                "Year": True,
+                "Projects": True,
+                "Stars": True
+            },
+            template="plotly_dark"
+        )
+
+        fig.update_traces(
+            texttemplate="%{text}",
+            textposition="outside"
+        )
+
+        fig.update_layout(
+            height=380,
+
+            margin=dict(
+                l=0,
+                r=10,
+                t=20,
+                b=10
+            ),
+
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+
+            showlegend=False,
+
+            xaxis=dict(
+                title="Year",
+                dtick=1,
+                type="linear"
+            ),
+
+            yaxis=dict(
+                title="Projects Created",
+                rangemode="tozero"
+            ),
+
+            hoverlabel=dict(
+                bgcolor="#151821",
+                font_size=12
+            )
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+            config={
+                "displaylogo": False,
+                "responsive": True
+            }
+        )
+
+        # -----------------------------------------------
+        # Yearly summary
+        # -----------------------------------------------
+
+        summary_cols = st.columns(
+            min(4, len(yearly_df))
+        )
+
+        recent_years = (
+            yearly_df
+            .sort_values(
+                "Year",
+                ascending=False
+            )
+            .head(4)
+        )
+
+        for index, (_, row) in enumerate(
+            recent_years.iterrows()
+        ):
+
+            if index >= len(summary_cols):
+                break
+
+            with summary_cols[index]:
+
+                render_html(
+                    f"""
+                    <div class="glass" style="text-align:center;">
+                        <div class="metric-label">
+                            {int(row["Year"])}
+                        </div>
+
+                        <div class="metric-value">
+                            {int(row["Projects"])}
+                        </div>
+
+                        <div style="
+                            color:#858a99;
+                            font-size:11px;
+                            margin-top:5px;
+                        ">
+                            Projects
+                        </div>
+                    </div>
+                    """
+                )
 
     else:
 
@@ -1181,19 +1281,43 @@ if analyze:
             <div class="section-title">
                 Project Evolution
             </div>
+
             <div class="glass">
-                <div style="color:#858a99;font-size:14px;">
-                    Project evolution data is not available for this profile yet.
+                <div style="
+                    color:#858a99;
+                    font-size:14px;
+                ">
+                    Project evolution data is not available
+                    for this profile yet.
                 </div>
             </div>
             """
         )
 
+else:
 
-    # ========================================================
-    # TECHNICAL ANALYSIS
-    # ========================================================
+    render_html(
+        """
+        <div class="section-title">
+            Project Evolution
+        </div>
 
+        <div class="glass">
+            <div style="
+                color:#858a99;
+                font-size:14px;
+            ">
+                Project evolution data is not available
+                for this profile yet.
+            </div>
+        </div>
+        """
+    )
+
+
+# ========================================================
+# TECHNICAL ANALYSIS
+# ========================================================
     with st.expander(
         "View technical analysis"
     ):
