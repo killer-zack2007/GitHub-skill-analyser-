@@ -1,479 +1,824 @@
-from pathlib import Path
-import sys
+import os
 
 import joblib
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT))
+from src.github_api import (
+    get_profile_bundle
+)
 
 from src.analyzer import (
     extract_features,
-    generate_insights,
+    calculate_score,
     repository_timeline,
-    score_features,
+    generate_insights
 )
-from src.github_api import GitHubAPIError, get_profile_bundle
 
+
+# ==========================================
+# PAGE CONFIG
+# ==========================================
 
 st.set_page_config(
     page_title="GitHub Pulse",
     page_icon="◈",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="collapsed"
 )
+
+
+# ==========================================
+# CUSTOM CSS
+# ==========================================
 
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+    @import url(
+        'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'
+    );
 
     html, body, [class*="css"] {
-        font-family: Inter, sans-serif;
+        font-family: 'Inter', sans-serif;
     }
 
     .stApp {
         background:
-            radial-gradient(circle at 10% 0%, rgba(120, 90, 255, .12), transparent 28%),
-            radial-gradient(circle at 90% 10%, rgba(0, 220, 190, .08), transparent 25%),
+            radial-gradient(
+                circle at 10% 10%,
+                rgba(120, 80, 255, 0.14),
+                transparent 30%
+            ),
+            radial-gradient(
+                circle at 90% 20%,
+                rgba(0, 210, 255, 0.10),
+                transparent 30%
+            ),
             #08090d;
     }
 
     .block-container {
-        max-width: 1180px;
-        padding-top: 2rem;
+        max-width: 1200px;
+        padding-top: 3rem;
         padding-bottom: 4rem;
     }
 
-    .brand {
-        font-family: "Space Grotesk", sans-serif;
-        font-size: 1.05rem;
-        font-weight: 700;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        color: #f5f7ff;
-    }
-
     .hero {
-        padding: 3.5rem 0 2rem;
+        text-align: center;
+        padding: 30px 10px 20px 10px;
     }
 
-    .eyebrow {
+    .hero-badge {
         display: inline-block;
-        padding: .35rem .65rem;
-        border: 1px solid rgba(255,255,255,.12);
+        padding: 7px 14px;
+        border: 1px solid rgba(255,255,255,0.12);
         border-radius: 999px;
-        color: #b9c0d4;
-        font-size: .78rem;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        background: rgba(255,255,255,.035);
+        background: rgba(255,255,255,0.04);
+        font-size: 13px;
+        color: #a9adba;
+        margin-bottom: 18px;
     }
 
     .hero h1 {
-        font-family: "Space Grotesk", sans-serif;
-        font-size: clamp(2.8rem, 7vw, 5.8rem);
-        line-height: .94;
-        letter-spacing: -.065em;
-        margin: 1rem 0;
-        color: #fff;
+        font-size: 52px;
+        line-height: 1.05;
+        font-weight: 800;
+        letter-spacing: -2px;
+        margin: 0;
+        color: white;
+    }
+
+    .hero h1 span {
+        background: linear-gradient(
+            90deg,
+            #a78bfa,
+            #60a5fa
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
 
     .hero p {
+        color: #8f94a3;
+        font-size: 16px;
         max-width: 650px;
-        color: #9da5b8;
-        font-size: 1.05rem;
+        margin: 16px auto 0;
         line-height: 1.7;
     }
 
     .glass {
-        border: 1px solid rgba(255,255,255,.10);
-        background: rgba(255,255,255,.045);
-        backdrop-filter: blur(16px);
+        background: rgba(255,255,255,0.045);
+        border: 1px solid rgba(255,255,255,0.08);
         border-radius: 22px;
-        padding: 1.4rem;
-        box-shadow: 0 20px 70px rgba(0,0,0,.22);
+        padding: 24px;
+        backdrop-filter: blur(16px);
+        margin-bottom: 18px;
     }
 
-    .score {
-        font-family: "Space Grotesk", sans-serif;
-        font-size: 4.5rem;
+    .score-card {
+        text-align: center;
+        padding: 35px 20px;
+        border-radius: 22px;
+        background:
+            linear-gradient(
+                145deg,
+                rgba(167,139,250,0.12),
+                rgba(96,165,250,0.06)
+            );
+        border: 1px solid rgba(167,139,250,0.16);
+    }
+
+    .score-number {
+        font-size: 64px;
+        font-weight: 800;
+        color: white;
         line-height: 1;
-        font-weight: 700;
-        letter-spacing: -.07em;
-        color: #fff;
+    }
+
+    .score-label {
+        margin-top: 10px;
+        color: #a9adba;
+        font-size: 14px;
     }
 
     .level {
-        color: #aeb6ca;
-        font-size: .82rem;
-        letter-spacing: .12em;
-        text-transform: uppercase;
-        margin-top: .55rem;
-    }
-
-    .muted {
-        color: #8f98ac;
+        display: inline-block;
+        margin-top: 18px;
+        padding: 8px 15px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.07);
+        color: white;
+        font-size: 13px;
+        font-weight: 600;
     }
 
     .section-title {
-        font-family: "Space Grotesk", sans-serif;
-        font-size: 1.25rem;
+        color: white;
+        font-size: 20px;
         font-weight: 700;
-        margin: 1.8rem 0 .8rem;
-        color: #fff;
+        margin: 22px 0 12px;
     }
 
     .insight {
-        border: 1px solid rgba(255,255,255,.08);
-        background: rgba(255,255,255,.035);
-        padding: .9rem 1rem;
+        padding: 13px 16px;
+        margin: 8px 0;
         border-radius: 14px;
-        margin: .5rem 0;
-        color: #dce1ee;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.06);
+        color: #d5d7de;
+        font-size: 14px;
     }
 
-    div[data-testid="stMetric"] {
-        border: 1px solid rgba(255,255,255,.08);
-        background: rgba(255,255,255,.035);
-        padding: 1rem;
-        border-radius: 16px;
-    }
-
-    div[data-testid="stTextInput"] input {
-        background: rgba(255,255,255,.055);
-        border: 1px solid rgba(255,255,255,.14);
-        border-radius: 14px;
-        color: #fff;
-        padding: .8rem 1rem;
-    }
-
-    .stButton > button,
-    .stFormSubmitButton > button {
-        width: 100%;
-        border-radius: 14px;
-        border: 1px solid rgba(255,255,255,.14);
-        padding: .72rem 1rem;
+    .profile-name {
+        font-size: 24px;
         font-weight: 700;
-        background: #fff;
-        color: #08090d;
+        color: white;
     }
 
-    .footer {
-        margin-top: 4rem;
-        padding-top: 1.2rem;
-        border-top: 1px solid rgba(255,255,255,.08);
-        color: #70788b;
-        font-size: .82rem;
-        text-align: center;
+    .profile-login {
+        color: #858a99;
+        font-size: 14px;
     }
+
+    .metric-label {
+        color: #858a99;
+        font-size: 12px;
+        margin-bottom: 5px;
+    }
+
+    .metric-value {
+        color: white;
+        font-size: 25px;
+        font-weight: 700;
+    }
+
+    footer {
+        visibility: hidden;
+    }
+
     </style>
     """,
-    unsafe_allow_html=True,
+    unsafe_allow_html=True
 )
 
-st.markdown(
-    '<div class="brand">◈ GitHub Pulse</div>',
-    unsafe_allow_html=True,
-)
+
+# ==========================================
+# HERO
+# ==========================================
 
 st.markdown(
     """
     <div class="hero">
-        <span class="eyebrow">Developer intelligence · public GitHub data</span>
-        <h1>See the signal<br>behind your GitHub.</h1>
+
+        <div class="hero-badge">
+            ◈ GitHub Profile Intelligence
+        </div>
+
+        <h1>
+            GitHub <span>Pulse</span>
+        </h1>
+
         <p>
-            Analyze public GitHub activity, projects, languages and
-            collaboration patterns in one clean dashboard.
-            The result is an activity-based estimate, not a measure
-            of actual programming ability.
+            Analyze GitHub activity, projects,
+            collaboration and technology signals
+            to estimate a developer's skill level.
         </p>
+
     </div>
     """,
-    unsafe_allow_html=True,
+    unsafe_allow_html=True
 )
 
-with st.form("analyze_form"):
-    col1, col2 = st.columns([4, 1])
+
+# ==========================================
+# SEARCH
+# ==========================================
+
+with st.container():
+
+    col1, col2 = st.columns(
+        [4, 1]
+    )
 
     with col1:
+
         username = st.text_input(
             "GitHub username",
-            placeholder="e.g. octocat",
-            label_visibility="collapsed",
+            placeholder="e.g. torvalds",
+            label_visibility="collapsed"
         )
 
     with col2:
-        submitted = st.form_submit_button("Analyze →")
 
-if submitted:
-    username = username.strip()
+        analyze = st.button(
+            "Analyze →",
+            use_container_width=True,
+            type="primary"
+        )
 
-    if not username:
-        st.warning("Enter a GitHub username first.")
+
+# ==========================================
+# MODEL LOADING
+# ==========================================
+
+MODEL_PATH = (
+    "models/github_skill_model.joblib"
+)
+
+
+def load_model():
+
+    if not os.path.exists(
+        MODEL_PATH
+    ):
+        return None
+
+    try:
+
+        artifact = joblib.load(
+            MODEL_PATH
+        )
+
+        return artifact
+
+    except Exception:
+
+        return None
+
+
+# ==========================================
+# ANALYSIS
+# ==========================================
+
+if analyze:
+
+    if not username.strip():
+
+        st.warning(
+            "Please enter a GitHub username."
+        )
+
         st.stop()
 
-    with st.spinner("Reading public GitHub signals..."):
+    username = username.strip()
+
+    with st.spinner(
+        "Scanning GitHub profile..."
+    ):
+
         try:
-            bundle = get_profile_bundle(username)
-        except GitHubAPIError as exc:
-            st.error(str(exc))
+
+            bundle = get_profile_bundle(
+                username
+            )
+
+        except Exception as error:
+
+            st.error(
+                str(error)
+            )
+
             st.stop()
 
-    features = extract_features(bundle)
-    rule_scores = score_features(features)
+    user = bundle["user"]
 
-    model_path = ROOT / "models" / "github_skill_model.joblib"
-    ml_prediction = None
+    repositories = bundle[
+        "repositories"
+    ]
 
-    if model_path.exists():
+    languages = bundle[
+        "languages"
+    ]
+
+    features = extract_features(
+        bundle
+    )
+
+    rubric_scores = calculate_score(
+        features
+    )
+
+    # ======================================
+    # MODEL PREDICTION
+    # ======================================
+
+    artifact = load_model()
+
+    predicted_level = rubric_scores[
+        "level"
+    ]
+
+    model_used = False
+
+    if artifact is not None:
+
         try:
-            artifact = joblib.load(model_path)
-            model = artifact["model"]
-            model_features = artifact["features"]
 
-            row = pd.DataFrame(
+            model = artifact["model"]
+
+            feature_names = artifact[
+                "features"
+            ]
+
+            X = pd.DataFrame(
                 [
                     {
-                        feature: features.get(feature, 0)
-                        for feature in model_features
+                        feature: features[
+                            feature
+                        ]
+                        for feature in feature_names
                     }
                 ]
             )
 
-            ml_prediction = str(model.predict(row)[0])
+            predicted_level = model.predict(
+                X
+            )[0]
+
+            model_used = True
+
         except Exception:
-            ml_prediction = None
 
-    user = bundle["user"]
-    repos = bundle["repos"]
-    timeline = repository_timeline(repos)
+            predicted_level = (
+                rubric_scores["level"]
+            )
 
-    display_level = ml_prediction or rule_scores["level"]
-    method = "ML model" if ml_prediction else "activity rubric"
 
-    strengths, improvements = generate_insights(
-        features,
-        rule_scores,
+    # ======================================
+    # PROFILE HEADER
+    # ======================================
+
+    avatar = user.get(
+        "avatar_url",
+        ""
     )
+
+    name = user.get(
+        "name"
+    ) or username
+
+    bio = user.get(
+        "bio"
+    ) or "No bio available."
+
+    html = f"""
+    <div class="glass">
+
+        <div style="
+            display:flex;
+            gap:20px;
+            align-items:center;
+        ">
+
+            <img
+                src="{avatar}"
+                width="80"
+                height="80"
+                style="
+                    border-radius:50%;
+                    border:2px solid
+                    rgba(255,255,255,0.12);
+                "
+            >
+
+            <div>
+
+                <div class="profile-name">
+                    {name}
+                </div>
+
+                <div class="profile-login">
+                    @{username}
+                </div>
+
+                <div style="
+                    color:#a9adba;
+                    margin-top:8px;
+                    font-size:13px;
+                ">
+                    {bio}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    """
 
     st.markdown(
-        '<div class="section-title">Profile snapshot</div>',
-        unsafe_allow_html=True,
+        html,
+        unsafe_allow_html=True
     )
 
-    profile_col, score_col = st.columns([2.3, 1])
 
-    with profile_col:
-        avatar = user.get("avatar_url", "")
-        name = user.get("name") or user.get("login", username)
-        bio = user.get("bio") or "No public bio."
+    # ======================================
+    # SCORE
+    # ======================================
+
+    col1, col2, col3 = st.columns(
+        [1.2, 2, 1.2]
+    )
+
+    with col1:
 
         st.markdown(
             f"""
-            <div class="glass">
-                <div style="display:flex;gap:18px;align-items:center;">
-                    <img src="{avatar}" width="76" height="76"
-                         style="border-radius:20px;border:1px solid rgba(255,255,255,.12);">
-                    <div>
-                        <div style="font-size:1.45rem;font-weight:800;color:#fff;">
-                            {name}
-                        </div>
-                        <div class="muted">
-                            @{user.get('login', username)}
-                        </div>
-                        <div style="margin-top:8px;color:#aab2c5;">
-                            {bio}
-                        </div>
-                    </div>
+            <div class="score-card">
+
+                <div class="score-number">
+                    {rubric_scores["overall_score"]}
                 </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
 
-    with score_col:
-        st.markdown(
-            f"""
-            <div class="glass">
-                <div class="score">{rule_scores['overall']:.0f}</div>
+                <div class="score-label">
+                    Overall Score / 100
+                </div>
+
                 <div class="level">
-                    {display_level} · {method}
+                    {predicted_level}
                 </div>
+
             </div>
             """,
-            unsafe_allow_html=True,
+            unsafe_allow_html=True
         )
 
-    st.markdown(
-        '<div class="section-title">At a glance</div>',
-        unsafe_allow_html=True,
-    )
 
-    m1, m2, m3, m4, m5 = st.columns(5)
-    m1.metric("Repositories", int(features["original_repos"]))
-    m2.metric("Followers", int(features["followers"]))
-    m3.metric("Stars", int(features["total_stars"]))
-    m4.metric("Languages", int(features["languages_count"]))
-    m5.metric("Recent events", int(features["recent_public_events"]))
+    with col2:
 
-    st.markdown(
-        '<div class="section-title">Skill signals</div>',
-        unsafe_allow_html=True,
-    )
-
-    signal_cols = st.columns(5)
-
-    signals = [
-        ("Activity", rule_scores["activity"]),
-        ("Projects", rule_scores["project"]),
-        ("Collaboration", rule_scores["collaboration"]),
-        ("Consistency", rule_scores["consistency"]),
-        ("Community", rule_scores["community"]),
-    ]
-
-    for col, (label, value) in zip(signal_cols, signals):
-        with col:
-            st.metric(label, f"{value:.0f}/100")
-
-    left, right = st.columns(2)
-
-    with left:
         st.markdown(
-            '<div class="section-title">Strengths</div>',
-            unsafe_allow_html=True,
+            '<div class="glass">',
+            unsafe_allow_html=True
         )
 
-        for item in strengths:
-            st.markdown(
-                f'<div class="insight">✦ {item}</div>',
-                unsafe_allow_html=True,
-            )
-
-    with right:
         st.markdown(
-            '<div class="section-title">Areas to improve</div>',
-            unsafe_allow_html=True,
+            '<div class="section-title">'
+            'Skill Signals'
+            '</div>',
+            unsafe_allow_html=True
         )
 
-        for item in improvements:
-            st.markdown(
-                f'<div class="insight">↗ {item}</div>',
-                unsafe_allow_html=True,
-            )
-
-    st.markdown(
-        '<div class="section-title">Project evolution</div>',
-        unsafe_allow_html=True,
-    )
-
-    if not timeline.empty:
-        chart = px.line(
-            timeline,
-            x="date",
-            y="cumulative_projects",
-            markers=True,
-            hover_data=["repository", "stars"],
-        )
-
-        chart.update_layout(
-            height=380,
-            margin=dict(l=10, r=10, t=10, b=10),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#aab2c5"),
-            xaxis_title=None,
-            yaxis_title="Cumulative original repositories",
-        )
-
-        st.plotly_chart(
-            chart,
-            use_container_width=True,
-        )
-
-        st.caption(
-            "This timeline shows repository creation activity. "
-            "It is a proxy for project growth, not a direct measurement "
-            "of skill growth."
-        )
-    else:
-        st.info(
-            "Not enough public repository history to draw the timeline."
-        )
-
-    st.markdown(
-        '<div class="section-title">Language footprint</div>',
-        unsafe_allow_html=True,
-    )
-
-    languages = bundle["languages"]
-
-    if languages:
-        lang_df = (
-            pd.DataFrame(
-                {
-                    "language": list(languages.keys()),
-                    "bytes": list(languages.values()),
-                }
-            )
-            .sort_values("bytes", ascending=False)
-            .head(10)
+        signal_data = pd.DataFrame(
+            {
+                "Signal": [
+                    "Activity",
+                    "Projects",
+                    "Collaboration",
+                    "Consistency",
+                    "Community"
+                ],
+                "Score": [
+                    rubric_scores[
+                        "activity_score"
+                    ],
+                    rubric_scores[
+                        "project_score"
+                    ],
+                    rubric_scores[
+                        "collaboration_score"
+                    ],
+                    rubric_scores[
+                        "consistency_score"
+                    ],
+                    rubric_scores[
+                        "community_score"
+                    ]
+                ]
+            }
         )
 
         fig = px.bar(
-            lang_df,
-            x="bytes",
-            y="language",
+            signal_data,
+            x="Score",
+            y="Signal",
             orientation="h",
+            range_x=[0, 100],
+            template="plotly_dark"
         )
 
         fig.update_layout(
-            height=360,
-            margin=dict(l=10, r=10, t=10, b=10),
+            height=270,
+            margin=dict(
+                l=0,
+                r=0,
+                t=10,
+                b=10
+            ),
+            showlegend=False,
             paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#aab2c5"),
-            xaxis_title="Code bytes detected by GitHub",
-            yaxis_title=None,
+            plot_bgcolor="rgba(0,0,0,0)"
         )
 
         st.plotly_chart(
             fig,
-            use_container_width=True,
-        )
-    else:
-        st.info(
-            "No language data was returned for the analyzed repositories."
+            use_container_width=True
         )
 
-    with st.expander("Technical feature data"):
+        st.markdown(
+            '</div>',
+            unsafe_allow_html=True
+        )
+
+
+    with col3:
+
+        st.markdown(
+            f"""
+            <div class="glass">
+
+                <div class="metric-label">
+                    PUBLIC REPOS
+                </div>
+
+                <div class="metric-value">
+                    {features["public_repos"]}
+                </div>
+
+                <br>
+
+                <div class="metric-label">
+                    FOLLOWERS
+                </div>
+
+                <div class="metric-value">
+                    {features["followers"]}
+                </div>
+
+                <br>
+
+                <div class="metric-label">
+                    LANGUAGES
+                </div>
+
+                <div class="metric-value">
+                    {features["languages_count"]}
+                </div>
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+
+    # ======================================
+    # INSIGHTS
+    # ======================================
+
+    strengths, improvements = (
+        generate_insights(
+            features,
+            rubric_scores
+        )
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.markdown(
+            '<div class="section-title">'
+            '✦ Strengths'
+            '</div>',
+            unsafe_allow_html=True
+        )
+
+        for item in strengths:
+
+            st.markdown(
+                f"""
+                <div class="insight">
+                    ✓ {item}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+
+    with col2:
+
+        st.markdown(
+            '<div class="section-title">'
+            '↗ Areas to Improve'
+            '</div>',
+            unsafe_allow_html=True
+        )
+
+        for item in improvements:
+
+            st.markdown(
+                f"""
+                <div class="insight">
+                    → {item}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+
+    # ======================================
+    # LANGUAGES
+    # ======================================
+
+    if languages:
+
+        st.markdown(
+            '<div class="section-title">'
+            'Technology Stack'
+            '</div>',
+            unsafe_allow_html=True
+        )
+
+        language_df = pd.DataFrame(
+            {
+                "Language": list(
+                    languages.keys()
+                ),
+                "Bytes": list(
+                    languages.values()
+                )
+            }
+        )
+
+        language_df = (
+            language_df
+            .sort_values(
+                "Bytes",
+                ascending=False
+            )
+            .head(10)
+        )
+
+        fig = px.bar(
+            language_df,
+            x="Language",
+            y="Bytes",
+            template="plotly_dark"
+        )
+
+        fig.update_layout(
+            height=330,
+            margin=dict(
+                l=0,
+                r=0,
+                t=10,
+                b=10
+            ),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)"
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
+
+
+    # ======================================
+    # PROJECT EVOLUTION
+    # ======================================
+
+    timeline = repository_timeline(
+        repositories
+    )
+
+    if timeline:
+
+        st.markdown(
+            '<div class="section-title">'
+            'Project Evolution'
+            '</div>',
+            unsafe_allow_html=True
+        )
+
+        timeline_df = pd.DataFrame(
+            {
+                "Date": [
+                    item["date"]
+                    for item in timeline
+                ],
+                "Project": [
+                    item["name"]
+                    for item in timeline
+                ],
+                "Stars": [
+                    item["stars"]
+                    for item in timeline
+                ]
+            }
+        )
+
+        fig = px.scatter(
+            timeline_df,
+            x="Date",
+            y="Stars",
+            hover_name="Project",
+            size="Stars",
+            template="plotly_dark"
+        )
+
+        fig.update_layout(
+            height=380,
+            margin=dict(
+                l=0,
+                r=0,
+                t=10,
+                b=10
+            ),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)"
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
+
+
+    # ======================================
+    # RAW FEATURES
+    # ======================================
+
+    with st.expander(
+        "View technical analysis"
+    ):
+
         feature_df = pd.DataFrame(
-            [
-                {
-                    "feature": key,
-                    "value": (
-                        round(value, 3)
-                        if isinstance(value, float)
-                        else value
-                    ),
-                }
-                for key, value in features.items()
-            ]
+            {
+                "Feature": features.keys(),
+                "Value": features.values()
+            }
         )
 
         st.dataframe(
             feature_df,
             use_container_width=True,
-            hide_index=True,
+            hide_index=True
         )
 
-st.markdown(
-    """
-    <div class="footer">
-        GitHub Pulse · Python · Streamlit · GitHub API · Public activity only
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+
+    # ======================================
+    # FOOTER
+    # ======================================
+
+    st.caption(
+        "GitHub Pulse provides an activity-based "
+        "estimate, not a definitive measure of "
+        "programming ability."
+    )
+
+    if model_used:
+
+        st.caption(
+            "Prediction powered by the trained "
+            "machine-learning model."
+        )
+
+    else:
+
+        st.caption(
+            "Prediction currently uses the "
+            "activity-based scoring system."
+        )
