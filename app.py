@@ -1,6 +1,4 @@
 import os
-import html
-from textwrap import dedent
 
 import pandas as pd
 import plotly.express as px
@@ -48,303 +46,129 @@ st.set_page_config(
 # ============================================================
 
 st.markdown(
-    dedent(
-        """
-        <style>
+    """
+<style>
 
-        @import url(
-            'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'
-        );
+.stApp {
+    background-color: #08090d;
+}
 
-        html, body, [class*="css"] {
-            font-family: 'Inter', sans-serif;
-        }
+.block-container {
+    max-width: 1200px;
+    padding-top: 2rem;
+    padding-bottom: 4rem;
+}
 
-        .stApp {
-            background:
-                radial-gradient(
-                    circle at 10% 10%,
-                    rgba(120, 80, 255, 0.14),
-                    transparent 30%
-                ),
-                radial-gradient(
-                    circle at 90% 20%,
-                    rgba(0, 210, 255, 0.10),
-                    transparent 30%
-                ),
-                #08090d;
-        }
+h1, h2, h3, h4 {
+    color: white !important;
+}
 
-        .block-container {
-            max-width: 1200px;
-            padding-top: 2.5rem;
-            padding-bottom: 4rem;
-        }
+p, label {
+    color: #b5bac7 !important;
+}
 
-        /* ====================================================
-           HERO
-        ==================================================== */
+.hero-title {
+    text-align: center;
+    font-size: 48px;
+    font-weight: 800;
+    margin-top: 20px;
+    margin-bottom: 5px;
+}
 
-        .hero {
-            text-align: center;
-            padding: 25px 10px;
-        }
+.hero-subtitle {
+    text-align: center;
+    color: #9da3b2;
+    font-size: 16px;
+    margin-bottom: 30px;
+}
 
-        .hero-badge {
-            display: inline-block;
-            padding: 7px 14px;
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 999px;
-            background: rgba(255,255,255,0.04);
-            font-size: 13px;
-            color: #a9adba;
-            margin-bottom: 18px;
-        }
+.hero-badge {
+    text-align: center;
+    color: #a78bfa;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
 
-        .hero h1 {
-            font-size: 52px;
-            line-height: 1.05;
-            font-weight: 800;
-            letter-spacing: -2px;
-            margin: 0;
-            color: white;
-        }
+.score-box {
+    background-color: #151620;
+    border: 1px solid #292b38;
+    border-radius: 18px;
+    padding: 25px;
+    text-align: center;
+    min-height: 220px;
+}
 
-        .hero h1 span {
-            background: linear-gradient(
-                90deg,
-                #a78bfa,
-                #60a5fa
-            );
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+.score-number {
+    font-size: 58px;
+    font-weight: 800;
+    color: white;
+}
 
-        .hero p {
-            color: #8f94a3;
-            font-size: 16px;
-            max-width: 650px;
-            margin: 16px auto 0;
-            line-height: 1.7;
-        }
+.score-text {
+    color: #9da3b2;
+    font-size: 14px;
+}
 
-        /* ====================================================
-           CARDS
-        ==================================================== */
+.profile-title {
+    font-size: 25px;
+    font-weight: 700;
+    color: white;
+}
 
-        .glass {
-            background: rgba(255,255,255,0.045);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 22px;
-            padding: 24px;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            margin-bottom: 18px;
-        }
+.profile-login {
+    color: #858b9a;
+    font-size: 14px;
+}
 
-        .profile-card {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
+.profile-bio {
+    color: #b5bac7;
+    font-size: 14px;
+}
 
-        .profile-avatar {
-            width: 80px;
-            height: 80px;
-            min-width: 80px;
-            border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.12);
-            object-fit: cover;
-        }
+.section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    margin-top: 25px;
+    margin-bottom: 12px;
+}
 
-        .profile-name {
-            font-size: 24px;
-            font-weight: 700;
-            color: white;
-        }
+div[data-testid="stMetric"] {
+    background-color: #151620;
+    border: 1px solid #292b38;
+    padding: 15px;
+    border-radius: 15px;
+}
 
-        .profile-login {
-            color: #858a99;
-            font-size: 14px;
-            margin-top: 2px;
-        }
+div[data-testid="stMetricValue"] {
+    color: white;
+}
 
-        .profile-bio {
-            color: #a9adba;
-            margin-top: 8px;
-            font-size: 13px;
-            line-height: 1.5;
-        }
+div[data-testid="stMetricLabel"] {
+    color: #9da3b2;
+}
 
-        /* ====================================================
-           SCORE
-        ==================================================== */
+div[data-testid="stTextInput"] input {
+    background-color: #151620;
+    color: white;
+    border: 1px solid #303342;
+    border-radius: 12px;
+}
 
-        .score-card {
-            text-align: center;
-            padding: 35px 20px;
-            border-radius: 22px;
-            background:
-                linear-gradient(
-                    145deg,
-                    rgba(167,139,250,0.12),
-                    rgba(96,165,250,0.06)
-                );
-            border: 1px solid rgba(167,139,250,0.16);
-            min-height: 270px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
+.stButton button {
+    border-radius: 12px;
+    font-weight: 600;
+}
 
-        .score-number {
-            font-size: 64px;
-            font-weight: 800;
-            color: white;
-            line-height: 1;
-        }
+[data-testid="stExpander"] {
+    background-color: #111219;
+    border: 1px solid #292b38;
+    border-radius: 14px;
+}
 
-        .score-label {
-            margin-top: 10px;
-            color: #a9adba;
-            font-size: 14px;
-        }
-
-        .level {
-            display: inline-block;
-            align-self: center;
-            margin-top: 18px;
-            padding: 8px 15px;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.07);
-            color: white;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        /* ====================================================
-           SECTION
-        ==================================================== */
-
-        .section-title {
-            color: white;
-            font-size: 20px;
-            font-weight: 700;
-            margin: 22px 0 12px;
-        }
-
-        /* ====================================================
-           INSIGHTS
-        ==================================================== */
-
-        .insight {
-            padding: 13px 16px;
-            margin: 8px 0;
-            border-radius: 14px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.06);
-            color: #d5d7de;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        /* ====================================================
-           METRICS
-        ==================================================== */
-
-        .metric-label {
-            color: #858a99;
-            font-size: 12px;
-            margin-bottom: 5px;
-            letter-spacing: 0.5px;
-        }
-
-        .metric-value {
-            color: white;
-            font-size: 25px;
-            font-weight: 700;
-        }
-
-        .metric-item {
-            margin-bottom: 22px;
-        }
-
-        .metric-item:last-child {
-            margin-bottom: 0;
-        }
-
-        /* ====================================================
-           SEARCH
-        ==================================================== */
-
-        div[data-testid="stTextInput"] input {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.08);
-            color: white;
-            border-radius: 12px;
-        }
-
-        div[data-testid="stTextInput"] input:focus {
-            border-color: rgba(167,139,250,0.6);
-            box-shadow: 0 0 0 1px rgba(167,139,250,0.2);
-        }
-
-        /* ====================================================
-           MOBILE
-        ==================================================== */
-
-        @media (max-width: 768px) {
-
-            .block-container {
-                padding-left: 1rem;
-                padding-right: 1rem;
-                padding-top: 1.5rem;
-            }
-
-            .hero {
-                padding-top: 15px;
-            }
-
-            .hero h1 {
-                font-size: 38px;
-                letter-spacing: -1px;
-            }
-
-            .hero p {
-                font-size: 14px;
-            }
-
-            .profile-card {
-                gap: 14px;
-            }
-
-            .profile-avatar {
-                width: 64px;
-                height: 64px;
-                min-width: 64px;
-            }
-
-            .profile-name {
-                font-size: 19px;
-            }
-
-            .score-number {
-                font-size: 52px;
-            }
-
-            .glass {
-                padding: 18px;
-                border-radius: 18px;
-            }
-        }
-
-        footer {
-            visibility: hidden;
-        }
-
-        </style>
-        """
-    ),
+</style>
+""",
     unsafe_allow_html=True,
 )
 
@@ -354,27 +178,22 @@ st.markdown(
 # ============================================================
 
 st.markdown(
-    dedent(
-        """
-        <div class="hero">
+    '<div class="hero-badge">GITHUB PROFILE INTELLIGENCE</div>',
+    unsafe_allow_html=True,
+)
 
-            <div class="hero-badge">
-                GitHub Profile Intelligence
-            </div>
+st.markdown(
+    '<div class="hero-title">GitHub Pulse</div>',
+    unsafe_allow_html=True,
+)
 
-            <h1>
-                GitHub <span>Pulse</span>
-            </h1>
-
-            <p>
-                Analyze GitHub activity, projects,
-                collaboration and technology signals
-                to estimate a developer's skill level.
-            </p>
-
-        </div>
-        """
-    ),
+st.markdown(
+    """
+<div class="hero-subtitle">
+Analyze GitHub activity, projects, collaboration,
+technology and consistency to estimate developer skill level.
+</div>
+""",
     unsafe_allow_html=True,
 )
 
@@ -383,13 +202,15 @@ st.markdown(
 # SEARCH
 # ============================================================
 
-search_col1, search_col2 = st.columns([5, 1])
+search_col1, search_col2 = st.columns(
+    [5, 1]
+)
 
 with search_col1:
 
     username = st.text_input(
         "GitHub username",
-        placeholder="e.g. torvalds",
+        placeholder="Enter GitHub username",
         label_visibility="collapsed",
     )
 
@@ -422,7 +243,9 @@ def load_model():
 
     try:
 
-        artifact = joblib.load(MODEL_PATH)
+        artifact = joblib.load(
+            MODEL_PATH
+        )
 
         if not isinstance(
             artifact,
@@ -455,19 +278,12 @@ PLOTLY_CONFIG = {
 
 
 # ============================================================
-# YEARLY PROJECT ANALYSIS
+# YEARLY PROJECT DATA
 # ============================================================
 
-def build_yearly_project_data(repositories):
-
-    """
-    Creates yearly project statistics directly
-    from GitHub repository data.
-
-    This does not depend on repository_timeline(),
-    so the yearly graph can still work even when
-    timeline data is unavailable.
-    """
+def build_yearly_project_data(
+    repositories,
+):
 
     rows = []
 
@@ -484,10 +300,6 @@ def build_yearly_project_data(repositories):
             dict,
         ):
             continue
-
-        # ----------------------------------------------------
-        # Find repository creation date
-        # ----------------------------------------------------
 
         date_value = (
             repo.get("created_at")
@@ -512,25 +324,18 @@ def build_yearly_project_data(repositories):
         if pd.isna(date):
             continue
 
-        # ----------------------------------------------------
-        # Repository name
-        # ----------------------------------------------------
-
         repo_name = (
             repo.get("name")
             or repo.get("full_name")
             or "Unknown"
         )
 
-        # ----------------------------------------------------
-        # Stars
-        # ----------------------------------------------------
-
         stars_value = repo.get(
             "stargazers_count"
         )
 
         if stars_value is None:
+
             stars_value = repo.get(
                 "stars",
                 0,
@@ -549,8 +354,12 @@ def build_yearly_project_data(repositories):
         rows.append(
             {
                 "Date": date,
-                "Year": int(date.year),
-                "Project": str(repo_name),
+                "Year": int(
+                    date.year
+                ),
+                "Project": str(
+                    repo_name
+                ),
                 "Stars": stars_value,
             }
         )
@@ -559,7 +368,9 @@ def build_yearly_project_data(repositories):
 
         return pd.DataFrame()
 
-    df = pd.DataFrame(rows)
+    df = pd.DataFrame(
+        rows
+    )
 
     return df.sort_values(
         "Date"
@@ -567,7 +378,7 @@ def build_yearly_project_data(repositories):
 
 
 # ============================================================
-# ANALYSIS
+# MAIN ANALYSIS
 # ============================================================
 
 if analyze:
@@ -588,7 +399,7 @@ if analyze:
 
 
     # ========================================================
-    # FETCH GITHUB DATA
+    # FETCH DATA
     # ========================================================
 
     with st.spinner(
@@ -611,7 +422,7 @@ if analyze:
 
 
     # ========================================================
-    # VALIDATE BUNDLE
+    # VALIDATE API RESPONSE
     # ========================================================
 
     if not isinstance(
@@ -731,93 +542,84 @@ if analyze:
 
 
     # ========================================================
-    # PROFILE HEADER
+    # PROFILE
     # ========================================================
 
     if not isinstance(
         user,
         dict,
     ):
+
         user = {}
 
-    avatar = html.escape(
-        str(
-            user.get(
-                "avatar_url",
-                "",
-            )
-        ),
-        quote=True,
-    )
 
-    name = html.escape(
-        str(
-            user.get(
-                "name"
-            )
-            or username
+    avatar_url = str(
+        user.get(
+            "avatar_url",
+            "",
         )
     )
 
-    safe_username = html.escape(
-        username
-    )
-
-    bio = html.escape(
-        str(
-            user.get(
-                "bio"
-            )
-            or "No bio available."
+    profile_name = str(
+        user.get(
+            "name"
         )
+        or username
     )
 
-    profile_html = dedent(
-        f"""
-        <div class="glass">
-
-            <div class="profile-card">
-
-                <img
-                    class="profile-avatar"
-                    src="{avatar}"
-                    alt="GitHub avatar"
-                >
-
-                <div>
-
-                    <div class="profile-name">
-                        {name}
-                    </div>
-
-                    <div class="profile-login">
-                        @{safe_username}
-                    </div>
-
-                    <div class="profile-bio">
-                        {bio}
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-        """
+    profile_bio = str(
+        user.get(
+            "bio"
+        )
+        or "No bio available."
     )
+
+
+    # ========================================================
+    # PROFILE SECTION
+    # ========================================================
 
     st.markdown(
-        profile_html,
+        '<div class="section-title">Profile</div>',
         unsafe_allow_html=True,
     )
 
+    profile_col1, profile_col2 = st.columns(
+        [1, 4]
+    )
+
+    with profile_col1:
+
+        if avatar_url:
+
+            st.image(
+                avatar_url,
+                width=100,
+            )
+
+    with profile_col2:
+
+        st.markdown(
+            f'<div class="profile-title">{profile_name}</div>',
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            f'<div class="profile-login">@{username}</div>',
+            unsafe_allow_html=True,
+        )
+
+        st.write(
+            profile_bio
+        )
+
 
     # ========================================================
-    # SCORE + SIGNALS + METRICS
+    # SCORE / SIGNALS / METRICS
     # ========================================================
 
-    score_col, signals_col, metrics_col = st.columns(
-        [1.15, 2, 1.15]
+    score_col, signal_col, metric_col = st.columns(
+        [1.1, 2, 1.2]
     )
 
 
@@ -855,28 +657,24 @@ if analyze:
         )
 
         st.markdown(
-            dedent(
-                f"""
-                <div class="score-card">
-
-                    <div class="score-number">
-                        {overall_score}
-                    </div>
-
-                    <div class="score-label">
-                        Overall Score / 100
-                    </div>
-
-                    <div class="level">
-                        {html.escape(
-                            str(predicted_level)
-                        )}
-                    </div>
-
-                </div>
-                """
-            ),
+            '<div class="section-title">Overall Score</div>',
             unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            f"""
+<div class="score-box">
+    <div class="score-number">{overall_score}</div>
+    <div class="score-text">Score out of 100</div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+        st.write("")
+
+        st.info(
+            f"Level: {predicted_level}"
         )
 
 
@@ -884,20 +682,10 @@ if analyze:
     # SIGNALS
     # ========================================================
 
-    with signals_col:
+    with signal_col:
 
         st.markdown(
-            dedent(
-                """
-                <div class="glass">
-
-                    <div class="section-title">
-                        Skill Signals
-                    </div>
-
-                </div>
-                """
-            ),
+            '<div class="section-title">Skill Signals</div>',
             unsafe_allow_html=True,
         )
 
@@ -962,7 +750,7 @@ if analyze:
         )
 
         fig.update_layout(
-            height=300,
+            height=320,
             margin=dict(
                 l=0,
                 r=30,
@@ -992,7 +780,7 @@ if analyze:
     # METRICS
     # ========================================================
 
-    with metrics_col:
+    with metric_col:
 
         public_repos = features.get(
             "public_repos",
@@ -1010,50 +798,23 @@ if analyze:
         )
 
         st.markdown(
-            dedent(
-                f"""
-                <div class="glass">
-
-                    <div class="metric-item">
-
-                        <div class="metric-label">
-                            PUBLIC REPOS
-                        </div>
-
-                        <div class="metric-value">
-                            {public_repos}
-                        </div>
-
-                    </div>
-
-                    <div class="metric-item">
-
-                        <div class="metric-label">
-                            FOLLOWERS
-                        </div>
-
-                        <div class="metric-value">
-                            {followers}
-                        </div>
-
-                    </div>
-
-                    <div class="metric-item">
-
-                        <div class="metric-label">
-                            LANGUAGES
-                        </div>
-
-                        <div class="metric-value">
-                            {languages_count}
-                        </div>
-
-                    </div>
-
-                </div>
-                """
-            ),
+            '<div class="section-title">Metrics</div>',
             unsafe_allow_html=True,
+        )
+
+        st.metric(
+            "Public Repositories",
+            public_repos,
+        )
+
+        st.metric(
+            "Followers",
+            followers,
+        )
+
+        st.metric(
+            "Languages",
+            languages_count,
         )
 
 
@@ -1061,23 +822,28 @@ if analyze:
     # INSIGHTS
     # ========================================================
 
+    st.markdown(
+        '<div class="section-title">Insights</div>',
+        unsafe_allow_html=True,
+    )
+
     try:
 
-        insights_result = generate_insights(
+        insight_result = generate_insights(
             features,
             rubric_scores,
         )
 
         if (
             isinstance(
-                insights_result,
+                insight_result,
                 tuple,
             )
-            and len(insights_result) >= 2
+            and len(insight_result) >= 2
         ):
 
-            strengths = insights_result[0]
-            improvements = insights_result[1]
+            strengths = insight_result[0]
+            improvements = insight_result[1]
 
         else:
 
@@ -1090,7 +856,7 @@ if analyze:
         improvements = []
 
 
-    insights_col1, insights_col2 = st.columns(
+    insight_col1, insight_col2 = st.columns(
         2
     )
 
@@ -1099,43 +865,24 @@ if analyze:
     # STRENGTHS
     # ========================================================
 
-    with insights_col1:
+    with insight_col1:
 
-        st.markdown(
-            """
-            <div class="section-title">
-                Strengths
-            </div>
-            """,
-            unsafe_allow_html=True,
+        st.subheader(
+            "Strengths"
         )
 
         if strengths:
 
             for item in strengths:
 
-                safe_item = html.escape(
+                st.success(
                     str(item)
-                )
-
-                st.markdown(
-                    f"""
-                    <div class="insight">
-                        + {safe_item}
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
                 )
 
         else:
 
-            st.markdown(
-                """
-                <div class="insight">
-                    No major strengths detected yet.
-                </div>
-                """,
-                unsafe_allow_html=True,
+            st.info(
+                "No major strengths detected yet."
             )
 
 
@@ -1143,43 +890,24 @@ if analyze:
     # IMPROVEMENTS
     # ========================================================
 
-    with insights_col2:
+    with insight_col2:
 
-        st.markdown(
-            """
-            <div class="section-title">
-                Areas to Improve
-            </div>
-            """,
-            unsafe_allow_html=True,
+        st.subheader(
+            "Areas to Improve"
         )
 
         if improvements:
 
             for item in improvements:
 
-                safe_item = html.escape(
+                st.warning(
                     str(item)
-                )
-
-                st.markdown(
-                    f"""
-                    <div class="insight">
-                        -> {safe_item}
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
                 )
 
         else:
 
-            st.markdown(
-                """
-                <div class="insight">
-                    Keep building and contributing!
-                </div>
-                """,
-                unsafe_allow_html=True,
+            st.info(
+                "Keep building and contributing."
             )
 
 
@@ -1187,17 +915,16 @@ if analyze:
     # TECHNOLOGY STACK
     # ========================================================
 
-    if isinstance(
-        languages,
-        dict,
-    ) and languages:
+    if (
+        isinstance(
+            languages,
+            dict,
+        )
+        and languages
+    ):
 
         st.markdown(
-            """
-            <div class="section-title">
-                Technology Stack
-            </div>
-            """,
+            '<div class="section-title">Technology Stack</div>',
             unsafe_allow_html=True,
         )
 
@@ -1244,7 +971,7 @@ if analyze:
                     * 100
                 )
 
-                fig = px.bar(
+                language_chart = px.bar(
                     language_df.sort_values(
                         "Usage"
                     ),
@@ -1255,12 +982,12 @@ if analyze:
                     template="plotly_dark",
                 )
 
-                fig.update_traces(
+                language_chart.update_traces(
                     texttemplate="%{text:.1f}%",
                     textposition="outside",
                 )
 
-                fig.update_layout(
+                language_chart.update_layout(
                     height=max(
                         300,
                         len(language_df) * 45,
@@ -1284,7 +1011,7 @@ if analyze:
                 )
 
                 st.plotly_chart(
-                    fig,
+                    language_chart,
                     use_container_width=True,
                     config=PLOTLY_CONFIG,
                 )
@@ -1295,18 +1022,9 @@ if analyze:
     # ========================================================
 
     st.markdown(
-        """
-        <div class="section-title">
-            Project Evolution
-        </div>
-        """,
+        '<div class="section-title">Project Evolution</div>',
         unsafe_allow_html=True,
     )
-
-
-    # ========================================================
-    # BUILD YEARLY DATA DIRECTLY
-    # ========================================================
 
     yearly_df = build_yearly_project_data(
         repositories
@@ -1314,7 +1032,7 @@ if analyze:
 
 
     # ========================================================
-    # FALLBACK TO repository_timeline()
+    # FALLBACK TIMELINE
     # ========================================================
 
     if yearly_df.empty:
@@ -1364,7 +1082,9 @@ if analyze:
 
                     continue
 
-                if pd.isna(date_value):
+                if pd.isna(
+                    date_value
+                ):
                     continue
 
                 try:
@@ -1406,13 +1126,9 @@ if analyze:
                     fallback_rows
                 )
 
-                yearly_df = yearly_df.sort_values(
-                    "Date"
-                )
-
 
     # ========================================================
-    # DRAW YEARLY GRAPH
+    # YEARLY GRAPH
     # ========================================================
 
     if not yearly_df.empty:
@@ -1465,11 +1181,15 @@ if analyze:
         )
 
 
-        # ====================================================
-        # YEARLY PROJECT COUNT GRAPH
-        # ====================================================
+        # ----------------------------------------------------
+        # PROJECTS PER YEAR
+        # ----------------------------------------------------
 
-        fig = px.line(
+        st.subheader(
+            "Projects Created Per Year"
+        )
+
+        yearly_chart = px.line(
             yearly_summary,
             x="Year",
             y="Projects",
@@ -1478,18 +1198,18 @@ if analyze:
             template="plotly_dark",
         )
 
-        fig.update_traces(
+        yearly_chart.update_traces(
             line=dict(
                 width=3,
             ),
             marker=dict(
-                size=8,
+                size=9,
             ),
             textposition="top center",
         )
 
-        fig.update_layout(
-            height=380,
+        yearly_chart.update_layout(
+            height=400,
             margin=dict(
                 l=0,
                 r=0,
@@ -1510,28 +1230,23 @@ if analyze:
         )
 
         st.plotly_chart(
-            fig,
+            yearly_chart,
             use_container_width=True,
             config=PLOTLY_CONFIG,
         )
 
 
-        # ====================================================
-        # YEARLY STARS GRAPH
-        # ====================================================
+        # ----------------------------------------------------
+        # YEARLY STAR GROWTH
+        # ----------------------------------------------------
 
         if yearly_summary["Stars"].sum() > 0:
 
-            st.markdown(
-                """
-                <div class="section-title">
-                    Yearly Star Growth
-                </div>
-                """,
-                unsafe_allow_html=True,
+            st.subheader(
+                "Yearly Star Growth"
             )
 
-            fig_stars = px.bar(
+            stars_chart = px.bar(
                 yearly_summary,
                 x="Year",
                 y="Stars",
@@ -1539,12 +1254,12 @@ if analyze:
                 template="plotly_dark",
             )
 
-            fig_stars.update_traces(
+            stars_chart.update_traces(
                 textposition="outside"
             )
 
-            fig_stars.update_layout(
-                height=330,
+            stars_chart.update_layout(
+                height=350,
                 margin=dict(
                     l=0,
                     r=0,
@@ -1565,15 +1280,15 @@ if analyze:
             )
 
             st.plotly_chart(
-                fig_stars,
+                stars_chart,
                 use_container_width=True,
                 config=PLOTLY_CONFIG,
             )
 
 
-        # ====================================================
-        # YEARLY SUMMARY CARDS
-        # ====================================================
+        # ----------------------------------------------------
+        # YEARLY SUMMARY
+        # ----------------------------------------------------
 
         summary_col1, summary_col2, summary_col3 = st.columns(
             3
@@ -1581,60 +1296,41 @@ if analyze:
 
         with summary_col1:
 
-            total_projects = int(
-                yearly_summary["Projects"].sum()
-            )
-
             st.metric(
                 "Total Projects",
-                total_projects,
+                int(
+                    yearly_summary[
+                        "Projects"
+                    ].sum()
+                ),
             )
 
         with summary_col2:
 
-            active_years = int(
-                yearly_summary["Year"].nunique()
-            )
-
             st.metric(
                 "Active Years",
-                active_years,
+                int(
+                    yearly_summary[
+                        "Year"
+                    ].nunique()
+                ),
             )
 
         with summary_col3:
 
-            total_stars = int(
-                yearly_summary["Stars"].sum()
-            )
-
             st.metric(
                 "Total Stars",
-                total_stars,
+                int(
+                    yearly_summary[
+                        "Stars"
+                    ].sum()
+                ),
             )
-
 
     else:
 
-        st.markdown(
-            dedent(
-                """
-                <div class="glass">
-
-                    <div style="
-                        color:#858a99;
-                        font-size:14px;
-                        line-height:1.6;
-                    ">
-
-                        Project creation dates are not
-                        available for this profile yet.
-
-                    </div>
-
-                </div>
-                """
-            ),
-            unsafe_allow_html=True,
+        st.info(
+            "Project creation dates are not available for this profile."
         )
 
 
@@ -1691,8 +1387,8 @@ if analyze:
 
     st.caption(
         "GitHub Pulse provides an activity-based "
-        "estimate, not a definitive measure of "
-        "programming ability."
+        "estimate and is not a definitive measure "
+        "of programming ability."
     )
 
     if model_used:
@@ -1707,4 +1403,4 @@ if analyze:
         st.caption(
             "Prediction currently uses the "
             "activity-based scoring system."
-)
+        )
