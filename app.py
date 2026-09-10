@@ -1,13 +1,12 @@
-import os
+from pathlib import Path
+from html import escape
 
 import joblib
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from src.github_api import (
-    get_profile_bundle
-)
+from src.github_api import get_profile_bundle
 
 from src.analyzer import (
     extract_features,
@@ -199,6 +198,38 @@ st.markdown(
         visibility: hidden;
     }
 
+    /* Streamlit button */
+
+    .stButton > button {
+        border-radius: 12px;
+        font-weight: 600;
+        min-height: 42px;
+    }
+
+    /* Mobile responsiveness */
+
+    @media (max-width: 768px) {
+
+        .block-container {
+            padding-top: 1.5rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        .hero h1 {
+            font-size: 40px;
+        }
+
+        .hero p {
+            font-size: 14px;
+        }
+
+        .score-number {
+            font-size: 50px;
+        }
+
+    }
+
     </style>
     """,
     unsafe_allow_html=True
@@ -209,71 +240,74 @@ st.markdown(
 # HERO
 # ==========================================
 
-st.markdown(
-    """
-    <div class="hero">
+hero_html = """
+<div class="hero">
 
-        <div class="hero-badge">
-            ◈ GitHub Profile Intelligence
-        </div>
-
-        <h1>
-            GitHub <span>Pulse</span>
-        </h1>
-
-        <p>
-            Analyze GitHub activity, projects,
-            collaboration and technology signals
-            to estimate a developer's skill level.
-        </p>
-
+    <div class="hero-badge">
+        ◈ GitHub Profile Intelligence
     </div>
-    """,
-    unsafe_allow_html=True
-)
+
+    <h1>
+        GitHub <span>Pulse</span>
+    </h1>
+
+    <p>
+        Analyze GitHub activity, projects,
+        collaboration and technology signals
+        to estimate a developer's skill level.
+    </p>
+
+</div>
+"""
+
+# Use st.html instead of st.markdown
+# to ensure the HTML is rendered correctly.
+st.html(hero_html)
 
 
 # ==========================================
 # SEARCH
 # ==========================================
 
-with st.container():
+col1, col2 = st.columns([4, 1])
 
-    col1, col2 = st.columns(
-        [4, 1]
+with col1:
+
+    username = st.text_input(
+        "GitHub username",
+        placeholder="e.g. torvalds",
+        label_visibility="collapsed"
     )
 
-    with col1:
+with col2:
 
-        username = st.text_input(
-            "GitHub username",
-            placeholder="e.g. torvalds",
-            label_visibility="collapsed"
-        )
+    analyze = st.button(
+        "Analyze →",
+        use_container_width=True,
+        type="primary"
+    )
 
-    with col2:
 
-        analyze = st.button(
-            "Analyze →",
-            use_container_width=True,
-            type="primary"
-        )
+# ==========================================
+# MODEL PATH
+# ==========================================
+
+BASE_DIR = Path(__file__).resolve().parent
+
+MODEL_PATH = (
+    BASE_DIR
+    / "models"
+    / "github_skill_model.joblib"
+)
 
 
 # ==========================================
 # MODEL LOADING
 # ==========================================
 
-MODEL_PATH = (
-    "models/github_skill_model.joblib"
-)
-
-
 def load_model():
 
-    if not os.path.exists(
-        MODEL_PATH
-    ):
+    if not MODEL_PATH.exists():
         return None
 
     try:
@@ -295,6 +329,10 @@ def load_model():
 
 if analyze:
 
+    # --------------------------------------
+    # Validate username
+    # --------------------------------------
+
     if not username.strip():
 
         st.warning(
@@ -304,6 +342,11 @@ if analyze:
         st.stop()
 
     username = username.strip()
+
+
+    # --------------------------------------
+    # Fetch GitHub data
+    # --------------------------------------
 
     with st.spinner(
         "Scanning GitHub profile..."
@@ -323,6 +366,11 @@ if analyze:
 
             st.stop()
 
+
+    # --------------------------------------
+    # Extract data
+    # --------------------------------------
+
     user = bundle["user"]
 
     repositories = bundle[
@@ -333,13 +381,24 @@ if analyze:
         "languages"
     ]
 
+
+    # --------------------------------------
+    # Feature extraction
+    # --------------------------------------
+
     features = extract_features(
         bundle
     )
 
+
+    # --------------------------------------
+    # Activity-based score
+    # --------------------------------------
+
     rubric_scores = calculate_score(
         features
     )
+
 
     # ======================================
     # MODEL PREDICTION
@@ -352,6 +411,7 @@ if analyze:
     ]
 
     model_used = False
+
 
     if artifact is not None:
 
@@ -391,20 +451,31 @@ if analyze:
     # PROFILE HEADER
     # ======================================
 
-    avatar = user.get(
-        "avatar_url",
-        ""
+    avatar = escape(
+        user.get(
+            "avatar_url",
+            ""
+        )
     )
 
-    name = user.get(
-        "name"
-    ) or username
+    name = escape(
+        user.get(
+            "name"
+        ) or username
+    )
 
-    bio = user.get(
-        "bio"
-    ) or "No bio available."
+    safe_username = escape(
+        username
+    )
 
-    html = f"""
+    bio = escape(
+        user.get(
+            "bio"
+        ) or "No bio available."
+    )
+
+
+    profile_html = f"""
     <div class="glass">
 
         <div style="
@@ -421,6 +492,7 @@ if analyze:
                     border-radius:50%;
                     border:2px solid
                     rgba(255,255,255,0.12);
+                    object-fit:cover;
                 "
             >
 
@@ -431,7 +503,7 @@ if analyze:
                 </div>
 
                 <div class="profile-login">
-                    @{username}
+                    @{safe_username}
                 </div>
 
                 <div style="
@@ -450,18 +522,23 @@ if analyze:
     """
 
     st.markdown(
-        html,
+        profile_html,
         unsafe_allow_html=True
     )
 
 
     # ======================================
-    # SCORE
+    # SCORE + SIGNALS + METRICS
     # ======================================
 
     col1, col2, col3 = st.columns(
         [1.2, 2, 1.2]
     )
+
+
+    # --------------------------------------
+    # Overall Score
+    # --------------------------------------
 
     with col1:
 
@@ -478,7 +555,7 @@ if analyze:
                 </div>
 
                 <div class="level">
-                    {predicted_level}
+                    {escape(str(predicted_level))}
                 </div>
 
             </div>
@@ -486,6 +563,10 @@ if analyze:
             unsafe_allow_html=True
         )
 
+
+    # --------------------------------------
+    # Skill Signals
+    # --------------------------------------
 
     with col2:
 
@@ -501,6 +582,7 @@ if analyze:
             unsafe_allow_html=True
         )
 
+
         signal_data = pd.DataFrame(
             {
                 "Signal": [
@@ -510,25 +592,31 @@ if analyze:
                     "Consistency",
                     "Community"
                 ],
+
                 "Score": [
                     rubric_scores[
                         "activity_score"
                     ],
+
                     rubric_scores[
                         "project_score"
                     ],
+
                     rubric_scores[
                         "collaboration_score"
                     ],
+
                     rubric_scores[
                         "consistency_score"
                     ],
+
                     rubric_scores[
                         "community_score"
                     ]
                 ]
             }
         )
+
 
         fig = px.bar(
             signal_data,
@@ -539,29 +627,40 @@ if analyze:
             template="plotly_dark"
         )
 
+
         fig.update_layout(
             height=270,
+
             margin=dict(
                 l=0,
                 r=0,
                 t=10,
                 b=10
             ),
+
             showlegend=False,
+
             paper_bgcolor="rgba(0,0,0,0)",
+
             plot_bgcolor="rgba(0,0,0,0)"
         )
+
 
         st.plotly_chart(
             fig,
             use_container_width=True
         )
 
+
         st.markdown(
             '</div>',
             unsafe_allow_html=True
         )
 
+
+    # --------------------------------------
+    # Metrics
+    # --------------------------------------
 
     with col3:
 
@@ -614,7 +713,13 @@ if analyze:
         )
     )
 
+
     col1, col2 = st.columns(2)
+
+
+    # --------------------------------------
+    # Strengths
+    # --------------------------------------
 
     with col1:
 
@@ -625,17 +730,26 @@ if analyze:
             unsafe_allow_html=True
         )
 
+
         for item in strengths:
+
+            safe_item = escape(
+                str(item)
+            )
 
             st.markdown(
                 f"""
                 <div class="insight">
-                    ✓ {item}
+                    ✓ {safe_item}
                 </div>
                 """,
                 unsafe_allow_html=True
             )
 
+
+    # --------------------------------------
+    # Improvements
+    # --------------------------------------
 
     with col2:
 
@@ -646,12 +760,17 @@ if analyze:
             unsafe_allow_html=True
         )
 
+
         for item in improvements:
+
+            safe_item = escape(
+                str(item)
+            )
 
             st.markdown(
                 f"""
                 <div class="insight">
-                    → {item}
+                    → {safe_item}
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -671,16 +790,19 @@ if analyze:
             unsafe_allow_html=True
         )
 
+
         language_df = pd.DataFrame(
             {
                 "Language": list(
                     languages.keys()
                 ),
+
                 "Bytes": list(
                     languages.values()
                 )
             }
         )
+
 
         language_df = (
             language_df
@@ -691,6 +813,7 @@ if analyze:
             .head(10)
         )
 
+
         fig = px.bar(
             language_df,
             x="Language",
@@ -698,17 +821,22 @@ if analyze:
             template="plotly_dark"
         )
 
+
         fig.update_layout(
             height=330,
+
             margin=dict(
                 l=0,
                 r=0,
                 t=10,
                 b=10
             ),
+
             paper_bgcolor="rgba(0,0,0,0)",
+
             plot_bgcolor="rgba(0,0,0,0)"
         )
+
 
         st.plotly_chart(
             fig,
@@ -724,6 +852,7 @@ if analyze:
         repositories
     )
 
+
     if timeline:
 
         st.markdown(
@@ -733,22 +862,26 @@ if analyze:
             unsafe_allow_html=True
         )
 
+
         timeline_df = pd.DataFrame(
             {
                 "Date": [
                     item["date"]
                     for item in timeline
                 ],
+
                 "Project": [
                     item["name"]
                     for item in timeline
                 ],
+
                 "Stars": [
                     item["stars"]
                     for item in timeline
                 ]
             }
         )
+
 
         fig = px.scatter(
             timeline_df,
@@ -759,17 +892,22 @@ if analyze:
             template="plotly_dark"
         )
 
+
         fig.update_layout(
             height=380,
+
             margin=dict(
                 l=0,
                 r=0,
                 t=10,
                 b=10
             ),
+
             paper_bgcolor="rgba(0,0,0,0)",
+
             plot_bgcolor="rgba(0,0,0,0)"
         )
+
 
         st.plotly_chart(
             fig,
@@ -792,6 +930,7 @@ if analyze:
             }
         )
 
+
         st.dataframe(
             feature_df,
             use_container_width=True,
@@ -809,6 +948,7 @@ if analyze:
         "programming ability."
     )
 
+
     if model_used:
 
         st.caption(
@@ -821,4 +961,4 @@ if analyze:
         st.caption(
             "Prediction currently uses the "
             "activity-based scoring system."
-        )
+    )
