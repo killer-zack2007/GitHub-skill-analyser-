@@ -6,7 +6,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-# joblib is optional so the app can still work using the scoring system
+# joblib is optional
 try:
     import joblib
 except ImportError:
@@ -39,319 +39,351 @@ st.set_page_config(
 # ============================================================
 
 st.markdown(
-    dedent(
-        """
-        <style>
+    """
+<style>
 
-        @import url(
-            'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+}
+
+.stApp {
+    background:
+        radial-gradient(
+            circle at 10% 10%,
+            rgba(120, 80, 255, 0.14),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 90% 20%,
+            rgba(0, 210, 255, 0.10),
+            transparent 30%
+        ),
+        #08090d;
+}
+
+.block-container {
+    max-width: 1200px;
+    padding-top: 2.5rem;
+    padding-bottom: 4rem;
+}
+
+/* ============================================================
+   HERO
+============================================================ */
+
+.hero {
+    text-align: center;
+    padding: 25px 10px 25px 10px;
+}
+
+.hero-badge {
+    display: inline-block;
+    padding: 7px 14px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.04);
+    font-size: 13px;
+    color: #a9adba;
+    margin-bottom: 18px;
+}
+
+.hero h1 {
+    font-size: 52px;
+    line-height: 1.05;
+    font-weight: 800;
+    letter-spacing: -2px;
+    margin: 0;
+    color: white;
+}
+
+.hero h1 span {
+    background: linear-gradient(
+        90deg,
+        #a78bfa,
+        #60a5fa
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero p {
+    color: #8f94a3;
+    font-size: 16px;
+    max-width: 650px;
+    margin: 16px auto 0;
+    line-height: 1.7;
+}
+
+/* ============================================================
+   CARDS
+============================================================ */
+
+.glass {
+    background: rgba(255,255,255,0.045);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 22px;
+    padding: 24px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    margin-bottom: 18px;
+}
+
+.profile-card {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    min-width: 80px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.12);
+    object-fit: cover;
+}
+
+.profile-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+}
+
+.profile-login {
+    color: #858a99;
+    font-size: 14px;
+    margin-top: 2px;
+}
+
+.profile-bio {
+    color: #a9adba;
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* ============================================================
+   SCORE
+============================================================ */
+
+.score-card {
+    text-align: center;
+    padding: 35px 20px;
+    border-radius: 22px;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(167,139,250,0.12),
+            rgba(96,165,250,0.06)
         );
+    border: 1px solid rgba(167,139,250,0.16);
+    min-height: 270px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
 
-        html, body, [class*="css"] {
-            font-family: 'Inter', sans-serif;
-        }
+.score-number {
+    font-size: 64px;
+    font-weight: 800;
+    color: white;
+    line-height: 1;
+}
 
-        .stApp {
-            background:
-                radial-gradient(
-                    circle at 10% 10%,
-                    rgba(120, 80, 255, 0.14),
-                    transparent 30%
-                ),
-                radial-gradient(
-                    circle at 90% 20%,
-                    rgba(0, 210, 255, 0.10),
-                    transparent 30%
-                ),
-                #08090d;
-        }
+.score-label {
+    margin-top: 10px;
+    color: #a9adba;
+    font-size: 14px;
+}
 
-        .block-container {
-            max-width: 1200px;
-            padding-top: 2.5rem;
-            padding-bottom: 4rem;
-        }
+.level {
+    display: inline-block;
+    align-self: center;
+    margin-top: 18px;
+    padding: 8px 15px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.07);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+}
 
-        /* ================= HERO ================= */
+/* ============================================================
+   SECTION
+============================================================ */
 
-        .hero {
-            text-align: center;
-            padding: 25px 10px 25px 10px;
-        }
+.section-title {
+    color: white;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 22px 0 12px;
+}
 
-        .hero-badge {
-            display: inline-block;
-            padding: 7px 14px;
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 999px;
-            background: rgba(255,255,255,0.04);
-            font-size: 13px;
-            color: #a9adba;
-            margin-bottom: 18px;
-        }
+/* ============================================================
+   INSIGHTS
+============================================================ */
 
-        .hero h1 {
-            font-size: 52px;
-            line-height: 1.05;
-            font-weight: 800;
-            letter-spacing: -2px;
-            margin: 0;
-            color: white;
-        }
+.insight {
+    padding: 13px 16px;
+    margin: 8px 0;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: #d5d7de;
+    font-size: 14px;
+    line-height: 1.5;
+}
 
-        .hero h1 span {
-            background: linear-gradient(
-                90deg,
-                #a78bfa,
-                #60a5fa
-            );
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+/* ============================================================
+   METRICS
+============================================================ */
 
-        .hero p {
-            color: #8f94a3;
-            font-size: 16px;
-            max-width: 650px;
-            margin: 16px auto 0;
-            line-height: 1.7;
-        }
+.metric-label {
+    color: #858a99;
+    font-size: 12px;
+    margin-bottom: 5px;
+    letter-spacing: 0.5px;
+}
 
-        /* ================= CARDS ================= */
+.metric-value {
+    color: white;
+    font-size: 25px;
+    font-weight: 700;
+}
 
-        .glass {
-            background: rgba(255,255,255,0.045);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 22px;
-            padding: 24px;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            margin-bottom: 18px;
-        }
+.metric-item {
+    margin-bottom: 22px;
+}
 
-        .profile-card {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
+.metric-item:last-child {
+    margin-bottom: 0;
+}
 
-        .profile-avatar {
-            width: 80px;
-            height: 80px;
-            min-width: 80px;
-            border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.12);
-            object-fit: cover;
-        }
+/* ============================================================
+   SEARCH
+============================================================ */
 
-        .profile-name {
-            font-size: 24px;
-            font-weight: 700;
-            color: white;
-        }
+div[data-testid="stTextInput"] input {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: white;
+    border-radius: 12px;
+}
 
-        .profile-login {
-            color: #858a99;
-            font-size: 14px;
-            margin-top: 2px;
-        }
+div[data-testid="stTextInput"] input:focus {
+    border-color: rgba(167,139,250,0.6);
+    box-shadow: 0 0 0 1px rgba(167,139,250,0.2);
+}
 
-        .profile-bio {
-            color: #a9adba;
-            margin-top: 8px;
-            font-size: 13px;
-            line-height: 1.5;
-        }
+/* ============================================================
+   BUTTON
+============================================================ */
 
-        /* ================= SCORE ================= */
+div[data-testid="stButton"] button {
+    border-radius: 12px;
+    font-weight: 600;
+}
 
-        .score-card {
-            text-align: center;
-            padding: 35px 20px;
-            border-radius: 22px;
-            background:
-                linear-gradient(
-                    145deg,
-                    rgba(167,139,250,0.12),
-                    rgba(96,165,250,0.06)
-                );
-            border: 1px solid rgba(167,139,250,0.16);
-            min-height: 270px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
+/* ============================================================
+   MOBILE
+============================================================ */
 
-        .score-number {
-            font-size: 64px;
-            font-weight: 800;
-            color: white;
-            line-height: 1;
-        }
+@media (max-width: 768px) {
 
-        .score-label {
-            margin-top: 10px;
-            color: #a9adba;
-            font-size: 14px;
-        }
+    .block-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-top: 1.5rem;
+    }
 
-        .level {
-            display: inline-block;
-            align-self: center;
-            margin-top: 18px;
-            padding: 8px 15px;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.07);
-            color: white;
-            font-size: 13px;
-            font-weight: 600;
-        }
+    .hero {
+        padding-top: 15px;
+    }
 
-        /* ================= SECTION ================= */
+    .hero h1 {
+        font-size: 38px;
+        letter-spacing: -1px;
+    }
 
-        .section-title {
-            color: white;
-            font-size: 20px;
-            font-weight: 700;
-            margin: 22px 0 12px;
-        }
+    .hero p {
+        font-size: 14px;
+    }
 
-        /* ================= INSIGHTS ================= */
+    .profile-card {
+        gap: 14px;
+    }
 
-        .insight {
-            padding: 13px 16px;
-            margin: 8px 0;
-            border-radius: 14px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.06);
-            color: #d5d7de;
-            font-size: 14px;
-            line-height: 1.5;
-        }
+    .profile-avatar {
+        width: 64px;
+        height: 64px;
+        min-width: 64px;
+    }
 
-        /* ================= METRICS ================= */
+    .profile-name {
+        font-size: 19px;
+    }
 
-        .metric-label {
-            color: #858a99;
-            font-size: 12px;
-            margin-bottom: 5px;
-            letter-spacing: 0.5px;
-        }
+    .score-number {
+        font-size: 52px;
+    }
 
-        .metric-value {
-            color: white;
-            font-size: 25px;
-            font-weight: 700;
-        }
+    .glass {
+        padding: 18px;
+        border-radius: 18px;
+    }
+}
 
-        .metric-item {
-            margin-bottom: 22px;
-        }
+footer {
+    visibility: hidden;
+}
 
-        .metric-item:last-child {
-            margin-bottom: 0;
-        }
-
-        /* ================= SEARCH ================= */
-
-        div[data-testid="stTextInput"] input {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.08);
-            color: white;
-            border-radius: 12px;
-        }
-
-        div[data-testid="stTextInput"] input:focus {
-            border-color: rgba(167,139,250,0.6);
-            box-shadow: 0 0 0 1px rgba(167,139,250,0.2);
-        }
-
-        /* ================= MOBILE ================= */
-
-        @media (max-width: 768px) {
-
-            .block-container {
-                padding-left: 1rem;
-                padding-right: 1rem;
-                padding-top: 1.5rem;
-            }
-
-            .hero {
-                padding-top: 15px;
-            }
-
-            .hero h1 {
-                font-size: 38px;
-                letter-spacing: -1px;
-            }
-
-            .hero p {
-                font-size: 14px;
-            }
-
-            .profile-card {
-                gap: 14px;
-            }
-
-            .profile-avatar {
-                width: 64px;
-                height: 64px;
-                min-width: 64px;
-            }
-
-            .profile-name {
-                font-size: 19px;
-            }
-
-            .score-number {
-                font-size: 52px;
-            }
-
-            .glass {
-                padding: 18px;
-                border-radius: 18px;
-            }
-
-        }
-
-        footer {
-            visibility: hidden;
-        }
-
-        </style>
-        """
-    ),
+</style>
+""",
     unsafe_allow_html=True
 )
+
+
+# ============================================================
+# HTML HELPER
+# ============================================================
+
+def render_html(content):
+    """
+    Render HTML safely through Streamlit Markdown.
+
+    Removes problematic blank lines and indentation
+    that can cause Streamlit to interpret HTML as
+    a Markdown code block.
+    """
+
+    cleaned = dedent(content).strip()
+
+    # Remove blank lines inside HTML blocks
+    cleaned = "\n".join(
+        line for line in cleaned.splitlines()
+        if line.strip()
+    )
+
+    st.markdown(
+        cleaned,
+        unsafe_allow_html=True
+    )
 
 
 # ============================================================
 # HERO
 # ============================================================
 
-st.markdown(
-    dedent(
-        """
-        <div class="hero">
-
-            <div class="hero-badge">
-                ◈ GitHub Profile Intelligence
-            </div>
-
-            <h1>
-                GitHub <span>Pulse</span>
-            </h1>
-
-            <p>
-                Analyze GitHub activity, projects,
-                collaboration and technology signals
-                to estimate a developer's skill level.
-            </p>
-
-        </div>
-        """
-    ),
-    unsafe_allow_html=True
+render_html(
+    """
+    <div class="hero">
+        <div class="hero-badge">◈ GitHub Profile Intelligence</div>
+        <h1>GitHub <span>Pulse</span></h1>
+        <p>Analyze GitHub activity, projects, collaboration and technology signals to estimate a developer's skill level.</p>
+    </div>
+    """
 )
 
 
@@ -387,11 +419,6 @@ MODEL_PATH = os.path.join(
 
 
 def load_model():
-    """
-    Load trained ML model if available.
-    If joblib/model is unavailable, the app
-    falls back to the activity-based rubric.
-    """
 
     if joblib is None:
         return None
@@ -400,6 +427,7 @@ def load_model():
         return None
 
     try:
+
         artifact = joblib.load(MODEL_PATH)
 
         if not isinstance(artifact, dict):
@@ -433,9 +461,9 @@ if analyze:
 
     username = username.strip()
 
-    # ----------------------------------------
+    # ========================================================
     # FETCH GITHUB DATA
-    # ----------------------------------------
+    # ========================================================
 
     with st.spinner(
         "Scanning GitHub profile..."
@@ -455,9 +483,9 @@ if analyze:
 
             st.stop()
 
-    # ----------------------------------------
-    # DATA
-    # ----------------------------------------
+    # ========================================================
+    # EXTRACT DATA
+    # ========================================================
 
     try:
 
@@ -484,6 +512,10 @@ if analyze:
             features
         )
 
+        # Safety fallback
+        if not isinstance(rubric_scores, dict):
+            rubric_scores = {}
+
     except Exception as error:
 
         st.error(
@@ -492,16 +524,103 @@ if analyze:
 
         st.stop()
 
+
+    # ========================================================
+    # SAFE SCORE CALCULATION
+    # ========================================================
+
+    signal_scores = [
+        float(
+            rubric_scores.get(
+                "activity_score",
+                0
+            ) or 0
+        ),
+        float(
+            rubric_scores.get(
+                "project_score",
+                0
+            ) or 0
+        ),
+        float(
+            rubric_scores.get(
+                "collaboration_score",
+                0
+            ) or 0
+        ),
+        float(
+            rubric_scores.get(
+                "consistency_score",
+                0
+            ) or 0
+        ),
+        float(
+            rubric_scores.get(
+                "community_score",
+                0
+            ) or 0
+        )
+    ]
+
+    existing_score = rubric_scores.get(
+        "overall_score",
+        0
+    )
+
+    try:
+        existing_score = float(
+            existing_score or 0
+        )
+    except Exception:
+        existing_score = 0
+
+    # If analyzer returns 0 but individual signals exist,
+    # calculate a weighted average fallback.
+    if existing_score <= 0 and any(
+        score > 0 for score in signal_scores
+    ):
+
+        overall_score = round(
+            sum(signal_scores) / len(signal_scores)
+        )
+
+    else:
+
+        overall_score = round(
+            max(
+                0,
+                min(
+                    100,
+                    existing_score
+                )
+            )
+        )
+
+    # ========================================================
+    # LEVEL
+    # ========================================================
+
+    predicted_level = rubric_scores.get(
+        "level"
+    )
+
+    if not predicted_level:
+
+        if overall_score < 40:
+            predicted_level = "Beginner"
+
+        elif overall_score < 70:
+            predicted_level = "Intermediate"
+
+        else:
+            predicted_level = "Advanced"
+
+
     # ========================================================
     # MODEL PREDICTION
     # ========================================================
 
     artifact = load_model()
-
-    predicted_level = rubric_scores.get(
-        "level",
-        "Beginner"
-    )
 
     model_used = False
 
@@ -522,7 +641,10 @@ if analyze:
                     0
                 )
 
-            X = pd.DataFrame([row])
+            X = pd.DataFrame(
+                [row],
+                columns=feature_names
+            )
 
             prediction = model.predict(X)
 
@@ -536,10 +658,7 @@ if analyze:
 
         except Exception:
 
-            predicted_level = rubric_scores.get(
-                "level",
-                "Beginner"
-            )
+            model_used = False
 
 
     # ========================================================
@@ -576,43 +695,19 @@ if analyze:
         )
     )
 
-    profile_html = dedent(
+    render_html(
         f"""
         <div class="glass">
-
             <div class="profile-card">
-
-                <img
-                    class="profile-avatar"
-                    src="{avatar}"
-                    alt="GitHub avatar"
-                >
-
+                <img class="profile-avatar" src="{avatar}" alt="GitHub avatar">
                 <div>
-
-                    <div class="profile-name">
-                        {name}
-                    </div>
-
-                    <div class="profile-login">
-                        @{safe_username}
-                    </div>
-
-                    <div class="profile-bio">
-                        {bio}
-                    </div>
-
+                    <div class="profile-name">{name}</div>
+                    <div class="profile-login">@{safe_username}</div>
+                    <div class="profile-bio">{bio}</div>
                 </div>
-
             </div>
-
         </div>
         """
-    )
-
-    st.markdown(
-        profile_html,
-        unsafe_allow_html=True
     )
 
 
@@ -625,60 +720,35 @@ if analyze:
     )
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # SCORE
-    # --------------------------------------------------------
+    # ========================================================
 
     with col1:
 
-        overall_score = rubric_scores.get(
-            "overall_score",
-            0
-        )
-
-        st.markdown(
-            dedent(
-                f"""
-                <div class="score-card">
-
-                    <div class="score-number">
-                        {overall_score}
-                    </div>
-
-                    <div class="score-label">
-                        Overall Score / 100
-                    </div>
-
-                    <div class="level">
-                        {html.escape(predicted_level)}
-                    </div>
-
-                </div>
-                """
-            ),
-            unsafe_allow_html=True
+        render_html(
+            f"""
+            <div class="score-card">
+                <div class="score-number">{overall_score}</div>
+                <div class="score-label">Overall Score / 100</div>
+                <div class="level">{html.escape(str(predicted_level))}</div>
+            </div>
+            """
         )
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # SIGNALS
-    # --------------------------------------------------------
+    # ========================================================
 
     with col2:
 
-        st.markdown(
-            dedent(
-                """
-                <div class="glass">
-
-                    <div class="section-title">
-                        Skill Signals
-                    </div>
-
-                </div>
-                """
-            ),
-            unsafe_allow_html=True
+        render_html(
+            """
+            <div class="glass">
+                <div class="section-title">Skill Signals</div>
+            </div>
+            """
         )
 
         signal_data = pd.DataFrame(
@@ -690,28 +760,7 @@ if analyze:
                     "Consistency",
                     "Community"
                 ],
-                "Score": [
-                    rubric_scores.get(
-                        "activity_score",
-                        0
-                    ),
-                    rubric_scores.get(
-                        "project_score",
-                        0
-                    ),
-                    rubric_scores.get(
-                        "collaboration_score",
-                        0
-                    ),
-                    rubric_scores.get(
-                        "consistency_score",
-                        0
-                    ),
-                    rubric_scores.get(
-                        "community_score",
-                        0
-                    )
-                ]
+                "Score": signal_scores
             }
         )
 
@@ -760,9 +809,9 @@ if analyze:
         )
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # METRICS
-    # --------------------------------------------------------
+    # ========================================================
 
     with col3:
 
@@ -781,51 +830,23 @@ if analyze:
             0
         )
 
-        st.markdown(
-            dedent(
-                f"""
-                <div class="glass">
-
-                    <div class="metric-item">
-
-                        <div class="metric-label">
-                            PUBLIC REPOS
-                        </div>
-
-                        <div class="metric-value">
-                            {public_repos}
-                        </div>
-
-                    </div>
-
-                    <div class="metric-item">
-
-                        <div class="metric-label">
-                            FOLLOWERS
-                        </div>
-
-                        <div class="metric-value">
-                            {followers}
-                        </div>
-
-                    </div>
-
-                    <div class="metric-item">
-
-                        <div class="metric-label">
-                            LANGUAGES
-                        </div>
-
-                        <div class="metric-value">
-                            {languages_count}
-                        </div>
-
-                    </div>
-
+        render_html(
+            f"""
+            <div class="glass">
+                <div class="metric-item">
+                    <div class="metric-label">PUBLIC REPOS</div>
+                    <div class="metric-value">{public_repos}</div>
                 </div>
-                """
-            ),
-            unsafe_allow_html=True
+                <div class="metric-item">
+                    <div class="metric-label">FOLLOWERS</div>
+                    <div class="metric-value">{followers}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">LANGUAGES</div>
+                    <div class="metric-value">{languages_count}</div>
+                </div>
+            </div>
+            """
         )
 
 
@@ -849,19 +870,16 @@ if analyze:
     col1, col2 = st.columns(2)
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # STRENGTHS
-    # --------------------------------------------------------
+    # ========================================================
 
     with col1:
 
-        st.markdown(
+        render_html(
             """
-            <div class="section-title">
-                ✦ Strengths
-            </div>
-            """,
-            unsafe_allow_html=True
+            <div class="section-title">✦ Strengths</div>
+            """
         )
 
         if strengths:
@@ -872,40 +890,33 @@ if analyze:
                     str(item)
                 )
 
-                st.markdown(
+                render_html(
                     f"""
-                    <div class="insight">
-                        ✓ {safe_item}
-                    </div>
-                    """,
-                    unsafe_allow_html=True
+                    <div class="insight">✓ {safe_item}</div>
+                    """
                 )
 
         else:
 
-            st.markdown(
+            render_html(
                 """
                 <div class="insight">
                     No major strengths detected yet.
                 </div>
-                """,
-                unsafe_allow_html=True
+                """
             )
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # IMPROVEMENTS
-    # --------------------------------------------------------
+    # ========================================================
 
     with col2:
 
-        st.markdown(
+        render_html(
             """
-            <div class="section-title">
-                ↗ Areas to Improve
-            </div>
-            """,
-            unsafe_allow_html=True
+            <div class="section-title">↗ Areas to Improve</div>
+            """
         )
 
         if improvements:
@@ -916,24 +927,20 @@ if analyze:
                     str(item)
                 )
 
-                st.markdown(
+                render_html(
                     f"""
-                    <div class="insight">
-                        → {safe_item}
-                    </div>
-                    """,
-                    unsafe_allow_html=True
+                    <div class="insight">→ {safe_item}</div>
+                    """
                 )
 
         else:
 
-            st.markdown(
+            render_html(
                 """
                 <div class="insight">
                     Keep building and contributing!
                 </div>
-                """,
-                unsafe_allow_html=True
+                """
             )
 
 
@@ -943,13 +950,12 @@ if analyze:
 
     if languages:
 
-        st.markdown(
+        render_html(
             """
             <div class="section-title">
                 Technology Stack
             </div>
-            """,
-            unsafe_allow_html=True
+            """
         )
 
         language_df = pd.DataFrame(
@@ -982,59 +988,61 @@ if analyze:
                 "Bytes"
             ].sum()
 
-            language_df["Usage"] = (
-                language_df["Bytes"]
-                / total_bytes
-                * 100
-            )
+            if total_bytes > 0:
 
-            fig = px.bar(
-                language_df.sort_values(
-                    "Usage"
-                ),
-                x="Usage",
-                y="Language",
-                orientation="h",
-                text="Usage",
-                template="plotly_dark"
-            )
-
-            fig.update_traces(
-                texttemplate="%{text:.1f}%",
-                textposition="outside"
-            )
-
-            fig.update_layout(
-                height=max(
-                    300,
-                    len(language_df) * 45
-                ),
-                margin=dict(
-                    l=0,
-                    r=35,
-                    t=10,
-                    b=10
-                ),
-                showlegend=False,
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                xaxis=dict(
-                    title="Usage %",
-                    range=[0, 110]
-                ),
-                yaxis=dict(
-                    title=""
+                language_df["Usage"] = (
+                    language_df["Bytes"]
+                    / total_bytes
+                    * 100
                 )
-            )
 
-            st.plotly_chart(
-                fig,
-                use_container_width=True,
-                config={
-                    "displaylogo": False,
-                    "responsive": True
-                }
-            )
+                fig = px.bar(
+                    language_df.sort_values(
+                        "Usage"
+                    ),
+                    x="Usage",
+                    y="Language",
+                    orientation="h",
+                    text="Usage",
+                    template="plotly_dark"
+                )
+
+                fig.update_traces(
+                    texttemplate="%{text:.1f}%",
+                    textposition="outside"
+                )
+
+                fig.update_layout(
+                    height=max(
+                        300,
+                        len(language_df) * 45
+                    ),
+                    margin=dict(
+                        l=0,
+                        r=35,
+                        t=10,
+                        b=10
+                    ),
+                    showlegend=False,
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    xaxis=dict(
+                        title="Usage %",
+                        range=[0, 110]
+                    ),
+                    yaxis=dict(
+                        title=""
+                    )
+                )
+
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True,
+                    config={
+                        "displaylogo": False,
+                        "responsive": True
+                    }
+                )
 
 
     # ========================================================
@@ -1054,37 +1062,36 @@ if analyze:
         timeline = []
 
 
+    timeline_rows = []
+
     if timeline:
-
-        st.markdown(
-            """
-            <div class="section-title">
-                Project Evolution
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        timeline_rows = []
 
         for item in timeline:
 
             try:
 
+                date_value = item.get(
+                    "date"
+                )
+
+                project_name = item.get(
+                    "name",
+                    "Unknown"
+                )
+
+                stars_value = item.get(
+                    "stars",
+                    0
+                )
+
                 timeline_rows.append(
                     {
-                        "Date": item.get(
-                            "date"
-                        ),
-                        "Project": item.get(
-                            "name",
-                            "Unknown"
-                        ),
+                        "Date": date_value,
+                        "Project": project_name,
                         "Stars": max(
                             0,
-                            item.get(
-                                "stars",
-                                0
+                            int(
+                                stars_value or 0
                             )
                         )
                     }
@@ -1094,73 +1101,92 @@ if analyze:
                 continue
 
 
-        if timeline_rows:
+    if timeline_rows:
 
-            timeline_df = pd.DataFrame(
-                timeline_rows
-            )
+        timeline_df = pd.DataFrame(
+            timeline_rows
+        )
 
-            timeline_df["Date"] = pd.to_datetime(
-                timeline_df["Date"],
-                errors="coerce"
-            )
+        timeline_df["Date"] = pd.to_datetime(
+            timeline_df["Date"],
+            errors="coerce"
+        )
 
-            timeline_df = timeline_df.dropna(
-                subset=["Date"]
-            )
+        timeline_df = timeline_df.dropna(
+            subset=["Date"]
+        )
 
-            if not timeline_df.empty:
+        if not timeline_df.empty:
 
-                fig = px.scatter(
-                    timeline_df,
-                    x="Date",
-                    y="Stars",
-                    hover_name="Project",
-                    size="Stars",
-                    template="plotly_dark"
-                )
-
-                fig.update_layout(
-                    height=380,
-                    margin=dict(
-                        l=0,
-                        r=0,
-                        t=10,
-                        b=10
-                    ),
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    yaxis=dict(
-                        rangemode="tozero"
-                    )
-                )
-
-                st.plotly_chart(
-                    fig,
-                    use_container_width=True,
-                    config={
-                        "displaylogo": False,
-                        "responsive": True
-                    }
-                )
-
-    else:
-
-        st.markdown(
-            dedent(
+            render_html(
                 """
+                <div class="section-title">
+                    Project Evolution
+                </div>
+                """
+            )
+
+            fig = px.scatter(
+                timeline_df,
+                x="Date",
+                y="Stars",
+                hover_name="Project",
+                size="Stars",
+                template="plotly_dark"
+            )
+
+            fig.update_layout(
+                height=380,
+                margin=dict(
+                    l=0,
+                    r=0,
+                    t=10,
+                    b=10
+                ),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                yaxis=dict(
+                    rangemode="tozero"
+                )
+            )
+
+            st.plotly_chart(
+                fig,
+                use_container_width=True,
+                config={
+                    "displaylogo": False,
+                    "responsive": True
+                }
+            )
+
+        else:
+
+            render_html(
+                """
+                <div class="section-title">
+                    Project Evolution
+                </div>
                 <div class="glass">
-                    <div style="
-                        color:#858a99;
-                        font-size:14px;
-                    ">
-                        Project evolution data is not available
-                        for this profile yet.
+                    <div style="color:#858a99;font-size:14px;">
+                        Project evolution data is not available for this profile yet.
                     </div>
                 </div>
                 """
-            ),
-            unsafe_allow_html=True
+            )
+
+    else:
+
+        render_html(
+            """
+            <div class="section-title">
+                Project Evolution
+            </div>
+            <div class="glass">
+                <div style="color:#858a99;font-size:14px;">
+                    Project evolution data is not available for this profile yet.
+                </div>
+            </div>
+            """
         )
 
 
