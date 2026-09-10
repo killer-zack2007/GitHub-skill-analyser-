@@ -30,16 +30,29 @@ The app automatically uses the saved model if present; otherwise it uses the tra
 Structure
 
 github-skill-analyzer/
+
 ├── app.py
+
 ├── requirements.txt
+
 ├── .env.example
+
 ├── .gitignore
+
 ├── README.md
+
 ├── data/raw/
+
 ├── models/
+
 └── src/
+
     ├── __init__.py
+    
     ├── github_api.py
+    
     ├── analyzer.py
+    
     ├── collect_dataset.py
+    
     └── train_model.py
